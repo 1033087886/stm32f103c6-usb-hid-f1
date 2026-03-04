@@ -32,6 +32,9 @@ int main(void)
     }
   }
 
+  /* Give host stack time to settle after last HID report. */
+  HAL_Delay(300U);
+
   EnterStandbyForever();
 }
 
@@ -93,7 +96,7 @@ static void EnterStandbyForever(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_RESET);
-  HAL_Delay(100U);
+  HAL_Delay(500U);
 
   HAL_SuspendTick();
 
