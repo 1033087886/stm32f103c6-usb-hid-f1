@@ -80,15 +80,26 @@ static HAL_StatusTypeDef HID_SendSingleKey(uint8_t keycode)
 
 static void EnterStandbyForever(void)
 {
-  HAL_SuspendTick();
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
 
   (void)USBD_Stop(&hUsbDeviceFS);
   (void)USBD_DeInit(&hUsbDeviceFS);
 
+  /* Force USB D+ low long enough so the host detects a clean disconnect. */
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+  GPIO_InitStruct.Pin = GPIO_PIN_12;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_RESET);
+  HAL_Delay(100U);
+
+  HAL_SuspendTick();
+
   __HAL_RCC_PWR_CLK_ENABLE();
   __HAL_PWR_CLEAR_FLAG(PWR_FLAG_SB);
   __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
-  SET_BIT(PWR->CSR, PWR_CSR_EWUP);
 
   HAL_PWR_EnterSTANDBYMode();
   while (1)
