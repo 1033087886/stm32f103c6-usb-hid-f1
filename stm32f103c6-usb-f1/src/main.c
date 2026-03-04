@@ -5,6 +5,7 @@
 static void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void USB_ReEnumerate(void);
+static void EnterSleepForever(void);
 static HAL_StatusTypeDef HID_SendReportWithTimeout(const uint8_t report[USBD_HID_REPORT_LENGTH], uint32_t timeout_ms);
 static HAL_StatusTypeDef HID_SendSingleKey(uint8_t keycode);
 
@@ -19,14 +20,19 @@ int main(void)
   USB_ReEnumerate();
   MX_USB_DEVICE_Init();
 
-  /* Requirement: delay 8 seconds after power-up, then send one F1 keystroke. */
+  /* Delay 8 seconds after power-up, then send F1 three times at 1-second intervals. */
   HAL_Delay(8000U);
-  (void)HID_SendSingleKey(HID_KEY_F1);
-
-  while (1)
+  for (uint32_t i = 0U; i < 3U; i++)
   {
-    HAL_Delay(1000U);
+    (void)HID_SendSingleKey(HID_KEY_F1);
+
+    if (i < 2U)
+    {
+      HAL_Delay(1000U);
+    }
   }
+
+  EnterSleepForever();
 }
 
 static HAL_StatusTypeDef HID_SendReportWithTimeout(const uint8_t report[USBD_HID_REPORT_LENGTH], uint32_t timeout_ms)
@@ -70,6 +76,16 @@ static HAL_StatusTypeDef HID_SendSingleKey(uint8_t keycode)
 
   HAL_Delay(20U);
   return HAL_OK;
+}
+
+static void EnterSleepForever(void)
+{
+  HAL_SuspendTick();
+
+  while (1)
+  {
+    HAL_PWR_EnterSLEEPMode(PWR_LOWPOWERREGULATOR_ON, PWR_SLEEPENTRY_WFI);
+  }
 }
 
 static void USB_ReEnumerate(void)
