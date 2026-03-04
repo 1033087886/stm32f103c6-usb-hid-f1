@@ -5,7 +5,7 @@
 static void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void USB_ReEnumerate(void);
-static void EnterSleepForever(void);
+static void EnterStandbyForever(void);
 static HAL_StatusTypeDef HID_SendReportWithTimeout(const uint8_t report[USBD_HID_REPORT_LENGTH], uint32_t timeout_ms);
 static HAL_StatusTypeDef HID_SendSingleKey(uint8_t keycode);
 
@@ -32,7 +32,7 @@ int main(void)
     }
   }
 
-  EnterSleepForever();
+  EnterStandbyForever();
 }
 
 static HAL_StatusTypeDef HID_SendReportWithTimeout(const uint8_t report[USBD_HID_REPORT_LENGTH], uint32_t timeout_ms)
@@ -78,13 +78,21 @@ static HAL_StatusTypeDef HID_SendSingleKey(uint8_t keycode)
   return HAL_OK;
 }
 
-static void EnterSleepForever(void)
+static void EnterStandbyForever(void)
 {
   HAL_SuspendTick();
 
+  (void)USBD_Stop(&hUsbDeviceFS);
+  (void)USBD_DeInit(&hUsbDeviceFS);
+
+  __HAL_RCC_PWR_CLK_ENABLE();
+  __HAL_PWR_CLEAR_FLAG(PWR_FLAG_SB);
+  __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
+  SET_BIT(PWR->CSR, PWR_CSR_EWUP);
+
+  HAL_PWR_EnterSTANDBYMode();
   while (1)
   {
-    HAL_PWR_EnterSLEEPMode(PWR_LOWPOWERREGULATOR_ON, PWR_SLEEPENTRY_WFI);
   }
 }
 
